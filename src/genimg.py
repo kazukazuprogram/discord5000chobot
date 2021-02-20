@@ -198,7 +198,7 @@ def genImage(word_a="5000兆円", word_b="欲しい!", max_width=1500, height=50
 
 def main():
     t = time()
-    width = 1500
+    width = 5000
     height = 500
     base = genBaseImage(width=width, height=_round(height/2))
     i = genImage("5000兆円", max_width=width, height=height, bg=(0, 0, 0, 0), base=base)

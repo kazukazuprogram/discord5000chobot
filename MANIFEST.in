@@ -1,0 +1,4 @@
+include requirements.txt
+include README.md
+include fonts/*.otf
+include LICENSE
