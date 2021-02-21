@@ -1,3 +1,9 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
+from PIL import Image, ImageDraw
+
+
 def splitarg(s):
     words = list()
     tmpw = ""
@@ -22,3 +28,15 @@ def splitarg(s):
                 tmpw += w[1:]
                 in_quota = True
     return words
+
+
+def getTextWidth(text, font, width=100, height=500, recursive=False):
+    step = 100
+    img = Image.new("L", (width, height))
+    draw = ImageDraw.Draw(img)
+    draw.text((0, 0), text, font=font, fill=255)
+    box = img.getbbox()
+    if box[2] < width-step or (recursive and box[2] == width-step):
+        return box[2]
+    else:
+        return getTextWidth(text=text, font=font, width=width+step, height=height, recursive=True)

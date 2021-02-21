@@ -6,6 +6,7 @@ from .utils import splitarg
 from discord import Client, Game, File
 from os import environ
 from io import BytesIO
+from time import time
 
 client = Client()
 width = 1500
@@ -30,10 +31,13 @@ async def on_message(message):
             if len(mes) == 1:
                 await message.channel.send('引数を指定してください')
             else:
+                t = time()
                 if len(mes) <= 2:
-                    img = genImage(mes[1], max_width=width, height=height, base=base)
+                    img = genImage(mes[1], default_width=width, height=height, default_base=base)
                 elif len(mes) >= 3:
-                    img = genImage(mes[1], mes[2], max_width=width, height=height, base=base)
+                    img = genImage(mes[1], mes[2], default_width=width, height=height, default_base=base)
+                print("Generate time :", time()-t)
+                del t
                 fp = BytesIO()
                 img.save(fp, format="png")
                 fp.seek(0)

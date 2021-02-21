@@ -6,7 +6,7 @@ import numpy as np
 from decimal import Decimal, ROUND_HALF_UP
 from time import time
 from math import radians, tan, cos, sin
-
+from .utils import getTextWidth
 _round = lambda f, r=ROUND_HALF_UP: int(Decimal(str(f)).quantize(Decimal("0"), rounding=r))
 rgb = lambda r, g, b: (r, g, b)
 
@@ -19,14 +19,14 @@ def get_gradient_2d(start, stop, width, height, is_horizontal=False):
 
 
 def get_gradient_3d(width, height, start_list, stop_list, is_horizontal_list=(False, False, False)):
-    result = np.zeros((height, width, len(start_list)), dtype=np.float)
+    result = np.zeros((height, width, len(start_list)), dtype=float)
     for i, (start, stop, is_horizontal) in enumerate(zip(start_list, stop_list, is_horizontal_list)):
         result[:, :, i] = get_gradient_2d(start, stop, width, height, is_horizontal)
     return result
 
 
 def createLinearGradient(steps, width, height):
-    result = np.zeros((0, width, len(steps[0])), dtype=np.float)
+    result = np.zeros((0, width, len(steps[0])), dtype=float)
     for i, k in enumerate(steps.keys()):
         if i == 0:
             continue
@@ -103,17 +103,37 @@ def genBaseImage(width=1500, height=150):
     return result
 
 
-def genImage(word_a="5000兆円", word_b="欲しい!", max_width=1500, height=500,
-             bg="white", subset=250, base=None):
-    width = max_width
+def genImage(word_a="5000兆円", word_b="欲しい!", default_width=1500, height=500,
+             bg="white", subset=250, default_base=None):
+    # width = max_width
     alpha = (0, 0, 0, 0)
     leftmargin = 50
     font_upper = ImageFont.truetype("fonts/notobk-subset.otf", _round(height/3))
     font_downer = ImageFont.truetype("fonts/notoserifbk-subset.otf", _round(height/3))
 
-    # Prepare mask
-    mask_base = Image.new("L", (width, _round(height/2)), 0)
+    # Prepare Width
+    upper_width = max([default_width,
+                      getTextWidth(word_a, font_upper, width=default_width,
+                                   height=_round(height/2))]) + 300
+    downer_width = max([default_width,
+                       getTextWidth(word_b, font_upper, width=default_width,
+                                    height=_round(height/2))]) + 300
+
+    # Prepare base - Upper (if required)
+    if default_width == upper_width:
+        upper_base = default_base
+    else:
+        upper_base = genBaseImage(width=upper_width, height=_round(height/2))
+
+    # Prepare base - Downer (if required)
+    downer_base = genBaseImage(width=downer_width+leftmargin, height=_round(height/2))
+    # if default_width == downer_width:
+    #     downer_base = default_base
+    # else:
+
     # Prepare mask - Upper
+    upper_mask_base = Image.new("L", (upper_width, _round(height/2)), 0)
+
     mask_img_upper = list()
     upper_data = [
         [
@@ -132,13 +152,14 @@ def genImage(word_a="5000兆円", word_b="欲しい!", max_width=1500, height=50
         ]
     ]
     for pos, stroke, color in zip(upper_data[0], upper_data[1], upper_data[2]):
-        mask_img_upper.append(mask_base.copy())
+        mask_img_upper.append(upper_mask_base.copy())
         mask_draw_upper = ImageDraw.Draw(mask_img_upper[-1])
-        mask_draw_upper.text((pos[0]+leftmargin, pos[1]), word_a,
+        mask_draw_upper.text((pos[0], pos[1]), word_a,
                              font=font_upper, fill=255,
                              stroke_width=_round(stroke*height/500))
 
     # Prepare mask - Downer
+    downer_mask_base = Image.new("L", (downer_width+leftmargin, _round(height/2)), 0)
     mask_img_downer = list()
     downer_data = [
         [
@@ -155,25 +176,25 @@ def genImage(word_a="5000兆円", word_b="欲しい!", max_width=1500, height=50
         ]
     ]
     for pos, stroke, color in zip(downer_data[0], downer_data[1], downer_data[2]):
-        mask_img_downer.append(mask_base.copy())
+        mask_img_downer.append(downer_mask_base.copy())
         mask_draw_downer = ImageDraw.Draw(mask_img_downer[-1])
         mask_draw_downer.text((pos[0]+leftmargin, pos[1]), word_b,
                               font=font_downer, fill=255,
                               stroke_width=_round(stroke*height/500))
 
     # Draw text - Upper
-    img_upper = Image.new("RGBA", (width, _round(height/2)), alpha)
+    img_upper = Image.new("RGBA", (upper_width, _round(height/2)), alpha)
 
     for i, (pos, stroke, color) in enumerate(zip(upper_data[0], upper_data[1], upper_data[2])):
-        img_upper_part = Image.new("RGBA", (width, _round(height/2)), alpha)
-        img_upper_part.paste(base[color], (0, 0), mask=mask_img_upper[i])
+        img_upper_part = Image.new("RGBA", (upper_width, _round(height/2)), alpha)
+        img_upper_part.paste(upper_base[color], (0, 0), mask=mask_img_upper[i])
         img_upper.alpha_composite(img_upper_part)
 
     # Draw text - Downer
-    img_downer = Image.new("RGBA", (width, _round(height/2)), alpha)
+    img_downer = Image.new("RGBA", (downer_width+leftmargin, _round(height/2)), alpha)
     for i, (pos, stroke, color) in enumerate(zip(downer_data[0], downer_data[1], downer_data[2])):
-        img_downer_part = Image.new("RGBA", (width, _round(height/2)), alpha)
-        img_downer_part.paste(base[color], (0, 0), mask=mask_img_downer[i])
+        img_downer_part = Image.new("RGBA", (downer_width+leftmargin, _round(height/2)), alpha)
+        img_downer_part.paste(downer_base[color], (0, 0), mask=mask_img_downer[i])
         img_downer.alpha_composite(img_downer_part)
 
     # tilt image
@@ -187,7 +208,7 @@ def genImage(word_a="5000兆円", word_b="欲しい!", max_width=1500, height=50
         tiltres.append(imgt)
 
     # finish
-    previmg = Image.new("RGBA", (width, height), alpha)
+    previmg = Image.new("RGBA", (max([upper_width, downer_width])+leftmargin+300, height), alpha)
     previmg.alpha_composite(tiltres[0], (0, 0), (0, 0))
     previmg.alpha_composite(tiltres[1], (subset, _round(height/2)), (0, 0))
     croprange = previmg.convert("RGB").getbbox()
@@ -198,13 +219,16 @@ def genImage(word_a="5000兆円", word_b="欲しい!", max_width=1500, height=50
 
 def main():
     t = time()
-    width = 5000
+    width = 1500
     height = 500
     base = genBaseImage(width=width, height=_round(height/2))
-    i = genImage("5000兆円", max_width=width, height=height, bg=(0, 0, 0, 0), base=base)
-    i.save("5000.png")
-    h = genImage("5000兆円", "bot", base=base)
-    h.save("ichiyou.png")
+    print("genBaseImage Time :", time()-t)
+    i = genImage("5000兆円", default_width=width, height=height, bg=(0, 0, 0, 0), default_base=base)
+    # i.save("5000.png")
+    i.show()
+    # h = genImage("5000兆円", "bot", base=base)
+    # h = genImage("5000兆円", "bot_________________________________OK", default_base=base)
+    # h.save("ichiyou.png")
     print("Time :", time()-t)
 
 
