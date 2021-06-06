@@ -30,6 +30,15 @@ async def on_message(message):
         if mes[0] == "!5000":
             if len(mes) == 1:
                 await message.channel.send('引数を指定してください')
+            elif mes[1].lower() == "shutdown":
+                if message.author.id == 478639727495479321:
+                    await message.channel.send('サーバーをシャットダウンします')
+                    await client.change_presence(activity=Game(name='Shutting down...'))
+                    client.clear()
+                    await client.close()
+                    print("Shutdown")
+                else:
+                    await message.channel.send('このコマンドは管理者のみ実行することができます')
             else:
                 t = time()
                 if len(mes) <= 2:
