@@ -38,7 +38,7 @@ async def on_message(message):
                     await client.close()
                     print("Shutdown")
                 else:
-                    await message.channel.send('コマンドは管理者のみ実行することができます')
+                    await message.channel.send('このコマンドは管理者のみ実行することができます')
             else:
                 t = time()
                 if len(mes) <= 2:
