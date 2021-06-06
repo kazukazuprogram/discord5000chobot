@@ -108,8 +108,10 @@ def genImage(word_a="5000兆円", word_b="欲しい!", default_width=1500, heigh
     # width = max_width
     alpha = (0, 0, 0, 0)
     leftmargin = 50
-    font_upper = ImageFont.truetype("fonts/notobk-subset.otf", _round(height/3))
-    font_downer = ImageFont.truetype("fonts/notoserifbk-subset.otf", _round(height/3))
+    font_upper = ImageFont.truetype(
+        "fonts/NotoSansJP-Black.otf", _round(height/3))
+    font_downer = ImageFont.truetype(
+        "fonts/NotoSerifJP-Black.otf", _round(height/3))
 
     # Prepare Width
     upper_width = max([default_width,
